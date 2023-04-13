@@ -1,29 +1,17 @@
 import Head from "next/head";
 import styles from "@/styles/Home.module.css";
-import {
-  DocumentData,
-  collection,
-  query,
-  orderBy,
-  getDocs,
-  doc,
-  updateDoc,
-} from "firebase/firestore";
-import { useEffect, useRef, useState } from "react";
-import { fireStore } from "@/config/firebaseConfig";
+import { useRef, useState } from "react";
 import domtoimage from "dom-to-image";
 import { saveAs } from "file-saver";
 import { AiFillGithub } from "react-icons/ai";
+import { studentsData } from '@/assets/data';
 
-interface SeatType {
-  [x: string]: DocumentData | string | number;
+export interface SeatType {
+  [x: string]: string | number;
 }
 
 export default function Home() {
-  const bucket = collection(fireStore, "students");
-  const q = query(bucket, orderBy("current_seat"));
-  const [students, setStudents] = useState<SeatType[]>([]);
-  const [render, setRender] = useState(false);
+  const [students, setStudents] = useState<SeatType[]>(studentsData);
   const date = new Date();
 
   const cardRef = useRef<HTMLDivElement>(null);
@@ -38,35 +26,18 @@ export default function Home() {
             : "0" + String(date.getMonth() + 1)
         }${
           date.getDate() > 9 ? date.getDate() : "0" + String(date.getDate())
-        } 3-2 자리배치도.png`
+        } 3학년 1번 자리배치도.png`
       );
     });
   };
 
   const setEmptySeat = (seats: SeatType[]) => {
     return (seats = [
+      { name: "빈자리" },
       ...seats.slice(0, 12),
-      { name: "빈자리" },
       ...seats.slice(12),
-      { name: "빈자리" },
     ]);
   };
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const response = await getDocs(q);
-        let newData: SeatType[] = [];
-        response.docs.map((doc) => {
-          newData.push({ ...doc.data(), doc_id: doc.id });
-        });
-        newData = setEmptySeat(newData);
-        setStudents(newData);
-      } catch (error) {
-        console.log(error);
-      }
-    })();
-  }, [render]);
 
   const shuffle = (array: SeatType[]) => {
     for (let i = array.length - 1; i > 0; i--) {
@@ -82,33 +53,23 @@ export default function Home() {
     newStudents.forEach((student) => {
       student.current_seat = newStudents.indexOf(student);
     });
-    newStudents.forEach(async (student) => {
-      if (student.doc_id) {
-        const studentDocRef = doc(
-          fireStore,
-          "students",
-          String(student.doc_id)
-        );
-        await updateDoc(studentDocRef, student);
-      }
-    });
-    setRender((prev) => !prev);
+    setStudents(newStudents);
   };
 
   return (
     <>
       <Head>
-        <title>3-2반 자리 뽑기 사이트!</title>
+        <title>3학년 1반 자리 뽑기 사이트!</title>
       </Head>
       <div ref={cardRef} className={styles.background}>
-        <h1 className={styles.title}>3-2반 자리 배치도</h1>
+        <h1 className={styles.title}>3학년 1반 자리 배치도</h1>
         <div className={styles.seat_container}>
           {[...students].reverse().map((item, index) => {
             return (
               <div key={index} className={styles.seat}>
                 <span>
                   {item.id
-                    ? `32${
+                    ? `31${
                         Number(item.id) > 9
                           ? String(item.id)
                           : "0" + String(item.id)
